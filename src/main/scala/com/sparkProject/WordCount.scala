@@ -46,7 +46,7 @@ object WordCount {
     // Préférez la deuxième syntaxe: les types assurent la consistence des données, et les noms de variables permettent
     // le lire le code plus facilement.
 
-    val df_wordCount = sc.textFile("/Users/maxime/spark-2.2.0-bin-hadoop2.7/README.md")
+    val df_wordCount = sc.textFile("/home/jiaqi/spark-2.2.0-bin-hadoop2.7/README.md")
       .flatMap { case (line: String) => line.split(" ") }
       .map { case (word: String) => (word, 1) }
       .reduceByKey { case (i: Int, j: Int) => i + j }
@@ -55,7 +55,7 @@ object WordCount {
     df_wordCount.orderBy($"count".desc).show()
 
 
-    val df_wordCount_light = sc.textFile("/Users/maxime/spark-2.2.0-bin-hadoop2.7/README.md")
+    val df_wordCount_light = sc.textFile("/home/jiaqi/spark-2.2.0-bin-hadoop2.7/README.md")
       .flatMap { line: String => line.split(" ") }
       .map { word: String => (word, 1) }
       .reduceByKey { (i: Int, j: Int) => i + j }
@@ -64,7 +64,7 @@ object WordCount {
     df_wordCount_light.orderBy($"count".desc).show()
 
 
-    val df_wordCount_lighter = sc.textFile("/Users/maxime/spark-2.2.0-bin-hadoop2.7/README.md") // output RDD of lines : RDD[String]
+    val df_wordCount_lighter = sc.textFile("/home/jiaqi/spark-2.2.0-bin-hadoop2.7/README.md") // output RDD of lines : RDD[String]
       .flatMap(line => line.split(" ")) // output RDD of words : RDD[String]
       .map(word => (word, 1)) // output RDD of (Key, Value) pairs : RDD[(String, Int)]
       .reduceByKey((i, j) => i + j) // output RDD of (Key, ValueTot) pairs, where ValueTot is the sum of all value associated with the Key
@@ -73,7 +73,7 @@ object WordCount {
     df_wordCount_lighter.orderBy($"count".desc).show()
 
 
-    val df_wordCount_lightest = sc.textFile("/Users/maxime/spark-2.2.0-bin-hadoop2.7/README.md")
+    val df_wordCount_lightest = sc.textFile("/home/jiaqi/spark-2.2.0-bin-hadoop2.7/README.md")
       .flatMap(_.split(" "))
       .map((_, 1))
       .reduceByKey(_ + _)

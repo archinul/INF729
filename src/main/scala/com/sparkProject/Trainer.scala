@@ -42,7 +42,7 @@ object Trainer {
       *
       * *******************************************************************************/
 
-    /** CHARGER LE DATASET **/
+    /** 1) CHARGER LE DATASET **/
     val df = spark.read
       .option("header", true)
       .option("nullValue", "")
@@ -50,8 +50,8 @@ object Trainer {
       .parquet("/home/jiaqi/Documents/Work/INF729/Spark/TP2_3/train_prepared.csv")
 
 
-    //    df.printSchema()
-    /** TF-IDF **/
+    /** 2) UTILISER LES DONNEES TEXTUELLES **/
+    // a) Tokenizer
     val tokenizer = new RegexTokenizer()
       .setPattern("\\W+")
       .setGaps(true)
@@ -59,57 +59,60 @@ object Trainer {
       .setOutputCol("tokens")
 
     val tokenized = tokenizer.transform(df)
-    //    tokenized.select("tokens").show(false)
 
 
+    // b) Stop words remover
     val remover = new StopWordsRemover()
       .setInputCol("tokens")
       .setOutputCol("words")
 
     val removed = remover.transform(tokenized)
-//    removed.select("words").show(false)
 
-    // fit a CountVectorizerModel from the corpus
+
+    // c) TF
     val cvModel: CountVectorizerModel = new CountVectorizer()
       .setInputCol("words")
       .setOutputCol("rawfeatures")
       .fit(removed)
 
     val modelized = cvModel.transform(removed)
-    //    modelized.select("rawfeatures").show(false)
 
+
+    // d) IDF
     val idfModel = new IDF()
       .setInputCol("rawfeatures")
       .setOutputCol("tfidf")
       .fit(modelized)
 
-
     val rescaledData = idfModel.transform(modelized)
 
+
+    /** 3) CONVERTIR LES CATEGORIES EN DONNEES NUMERIQUES **/
+    // e) Country2
     val indexerCountry = new StringIndexer()
       .setInputCol("country2")
       .setOutputCol("country_indexed")
       .fit(rescaledData)
 
     val dfCountry = indexerCountry.transform(rescaledData)
-//    dfCountry.select("country2", "country_indexed").distinct().show(100, false)
 
-
+    // f) Currency2
     val indexerCurrency = new StringIndexer()
       .setInputCol("currency2")
       .setOutputCol("currency_indexed")
       .fit(rescaledData)
 
     val dfCurrency = indexerCurrency.transform(rescaledData)
-//    dfCurrency.select("currency2", "currency_indexed").distinct().show(100, false)
 
-    /** VECTOR ASSEMBLER **/
+
+    /** 4) METTRE LES DONNEES SOUS UNE FORME UNTILISABLE PAR SPARK.ML **/
+    // g) Vector assembler
     val vectAssembler = new VectorAssembler()
       .setInputCols(Array("tfidf", "days_campaign", "hours_prepa", "goal", "country_indexed", "currency_indexed"))
       .setOutputCol("features")
 
 
-    /** MODEL **/
+    // h) Classification model
     import org.apache.spark.ml.classification.LogisticRegression
     import org.apache.spark.ml.classification.LogisticRegressionModel
 
@@ -125,16 +128,19 @@ object Trainer {
       .setTol(1.0e-6)
       .setMaxIter(300)
 
-    /** PIPELINE **/
+
+    // i) Pipeline
     import org.apache.spark.ml.{Pipeline, PipelineModel}
     val pipeline = new Pipeline()
       .setStages(Array(tokenizer, remover, cvModel, idfModel, indexerCountry, indexerCurrency, vectAssembler, lr))
 
-    /** TRAINING AND GRID-SEARCH **/
-//    Split dataset randomly into Training and Test sets. Set seed for reproducibility
-    val Array(trainingData, testData) = df.limit(100).randomSplit(Array(0.9, 0.1),seed = 100)
 
-//    Evaluation
+    /** 5) ENTRAINEMENT ET TUNING DU MODELE **/
+    // j) Split data
+//    Split dataset randomly into Training and Test sets. Set seed for reproducibility
+    val Array(trainingData, testData) = df.randomSplit(Array(0.9, 0.1),seed = 100)
+
+    // k) Grid Search
     import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
     import org.apache.spark.ml.tuning.{ParamGridBuilder, TrainValidationSplit}
 
@@ -156,18 +162,14 @@ object Trainer {
       .setTrainRatio(0.7)
       .setSeed(100)
 
-    // Run train validation split, and choose the best set of parameters.
+    // l) Run grid search and show F1-score.
     val model = trainValidationSplit.fit(trainingData)
 
     val df_WithPredictions = model.transform(testData)
 
+    // F1-score
     val f1 = evaluatorF1.evaluate(df_WithPredictions)
     println("Model F1: " + f1)
-
-    df_WithPredictions.groupBy("final_status", "predictions").count.show()
-
-    // Save the model for future use
-//    model.write.overwrite().save("/home/jiaqi/Documents/Work/INF729/Spark/TP4_5/myLogisticR")
 
     // Displaying the parameters found via grid search
     val bestPipelineModel = model.bestModel.asInstanceOf[PipelineModel]
@@ -179,5 +181,13 @@ object Trainer {
 
     val lrStage = stages(stages.length - 1).asInstanceOf[LogisticRegressionModel]
     println("\tregParam = " + lrStage.getRegParam)
+
+
+    // m) Show predictions
+    df_WithPredictions.groupBy("final_status", "predictions").count.show()
+
+
+    // Save the model for future use
+    model.write.overwrite().save("/home/jiaqi/Documents/Work/INF729/Spark/TP4_5/myLogisticR")
   }
 }
