@@ -48,8 +48,8 @@ object Trainer {
       .option("header", true)
       .option("nullValue", "")
       .option("nullValue", "false")
-      .parquet("/home/jiaqi/Documents/Work/INF729/Spark/TP2_3/train_prepared.csv")
-
+//      .parquet("/home/jiaqi/Documents/Work/INF729/Spark/TP2_3/train_prepared.csv")
+      .parquet("/tmp/train_prepared.csv")
 
     /** 2) UTILISER LES DONNEES TEXTUELLES **/
     // a) Tokenizer
@@ -189,6 +189,7 @@ object Trainer {
 
 
     // Save the model for future use
-    model.write.overwrite().save("/home/jiaqi/Documents/Work/INF729/Spark/TP4_5/myLogisticR")
+//    model.write.overwrite().save("/home/jiaqi/Documents/Work/INF729/Spark/TP4_5/myLogisticR")
+    model.write.overwrite().save("/tmp/myLogisticR")
   }
 }
