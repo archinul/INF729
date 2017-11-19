@@ -97,6 +97,13 @@ object Trainer {
 
     val dfCountry = indexerCountry.transform(rescaledData)
 
+    // OneHotEncoder
+    val encoderCountry = new OneHotEncoder()
+      .setInputCol("country_indexed")
+      .setOutputCol("countryVec")
+
+    val dfCountryEncoded = encoderCountry.transform(dfCountry)
+
     // f) Currency2
     val indexerCurrency = new StringIndexer()
       .setInputCol("currency2")
@@ -105,11 +112,17 @@ object Trainer {
 
     val dfCurrency = indexerCurrency.transform(rescaledData)
 
+    // OneHotEncoder
+    val encoderCurrency = new OneHotEncoder()
+      .setInputCol("currency_indexed")
+      .setOutputCol("currencyVec")
+
+    val dfCurrencyEncoded = encoderCurrency.transform(dfCurrency)
 
     /** 4) METTRE LES DONNEES SOUS UNE FORME UNTILISABLE PAR SPARK.ML **/
     // g) Vector assembler
     val vectAssembler = new VectorAssembler()
-      .setInputCols(Array("tfidf", "days_campaign", "hours_prepa", "goal", "country_indexed", "currency_indexed"))
+      .setInputCols(Array("tfidf", "days_campaign", "hours_prepa", "goal", "countryVec", "currencyVec"))
       .setOutputCol("features")
 
 
@@ -133,7 +146,7 @@ object Trainer {
     // i) Pipeline
     import org.apache.spark.ml.{Pipeline, PipelineModel}
     val pipeline = new Pipeline()
-      .setStages(Array(tokenizer, remover, cvModel, idfModel, indexerCountry, indexerCurrency, vectAssembler, lr))
+      .setStages(Array(tokenizer, remover, cvModel, idfModel, indexerCountry, encoderCountry, indexerCurrency, encoderCurrency, vectAssembler, lr))
 
 
     /** 5) ENTRAINEMENT ET TUNING DU MODELE **/
@@ -190,6 +203,5 @@ object Trainer {
 
     // Save the model for future use
 //    model.write.overwrite().save("/home/jiaqi/Documents/Work/INF729/Spark/TP4_5/myLogisticR")
-    model.write.overwrite().save("/tmp/myLogisticR")
   }
 }
