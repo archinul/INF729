@@ -48,7 +48,7 @@ object Preprocessor {
       .option("header", true)  // Use first line of all files as header
       .option("inferSchema", "true") // Try to infer the data types of each column
       .option("nullValue", "false")  // replace strings "false" (that indicates missing data) by null values
-      .csv("/home/jiaqi/Documents/Work/INF729/Spark/TP2_3/train.csv")
+      .csv("/tmp/train.csv")
 
     // b) nombre de lignes et colonnes
     println(s"Total number of rows: ${df.count}")
@@ -208,7 +208,7 @@ object Preprocessor {
 
     /** WRITING DATAFRAME **/
 
-    dfFiltered.write.mode(SaveMode.Overwrite).parquet("/home/jiaqi/Documents/Work/INF729/Spark/TP2_3/train_prepared.csv")
+    dfFiltered.write.mode(SaveMode.Overwrite).parquet("/tmp/train_prepared.csv")
   }
 
 }
