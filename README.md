@@ -7,4 +7,4 @@
 4) lancer ./build_and_submit.sh Trainer
 
 
-PS: la sauvegarde du model a été volontairement mise en commentaire
+PS: la sauvegarde du modèle a été volontairement mise en commentaire
